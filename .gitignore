@@ -1,0 +1,47 @@
+### Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+### Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+### Environment and secrets
+.env
+.env.*
+!.env.example
+
+### Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+
+### Build and coverage output
+build/
+dist/
+out/
+coverage/
+
+### Dependencies
+node_modules/
+vendor/
+
+### Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+### Compiled binaries
+*.o
+*.obj
+*.dll
+*.exe
+*.so
+*.dylib
