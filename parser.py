@@ -15,4 +15,3 @@ def parse_csv(text):
 
     return data
 
-print(parse_csv(read_csv_file("data/employees.ascii.csv")))

@@ -25,6 +25,7 @@ build/
 dist/
 out/
 coverage/
+.coverage
 
 ### Dependencies
 node_modules/
