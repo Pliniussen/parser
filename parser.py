@@ -14,4 +14,3 @@ def parse_csv(text):
         data.append(row)
 
     return data
-
