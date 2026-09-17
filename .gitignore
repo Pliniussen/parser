@@ -46,3 +46,6 @@ venv/
 *.exe
 *.so
 *.dylib
+
+### Temp scripts and files
+trash/
