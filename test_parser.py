@@ -3,11 +3,11 @@ import io
 import pytest
 from parser import read_csv_file, parse_csv
 
+# Cross-checks our parser against Python's stdlib csv module on real sample files.
 @pytest.mark.parametrize("filepath", [
     "data/sogne.dawa.csv",
     "data/employees.ascii.csv",
 ])
-
 def test_fixture_matches_reference_parser(filepath):
     text = read_csv_file(filepath)
     expected = list(csv.DictReader(io.StringIO(text, newline="")))
@@ -53,6 +53,7 @@ def test_parse_csv_handles_input_without_trailing_newline():
 
 
 def test_parse_csv_fills_missing_fields_with_none():
+    # Row is shorter than the header, mirroring csv.DictReader's restval=None behavior.
     text = "name,role,age\nAda,Engineer\n"
 
     assert parse_csv(text) == [{
@@ -63,6 +64,7 @@ def test_parse_csv_fills_missing_fields_with_none():
 
 
 def test_parse_csv_collects_extra_fields_under_none_key():
+    # Row is longer than the header, mirroring csv.DictReader's restkey=None behavior.
     text = "name,role\nAda,Engineer,Extra1,Extra2\n"
 
     assert parse_csv(text) == [{
