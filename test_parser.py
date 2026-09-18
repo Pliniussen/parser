@@ -72,3 +72,29 @@ def test_parse_csv_collects_extra_fields_under_none_key():
         "role": "Engineer",
         None: ["Extra1", "Extra2"],
     }]
+
+
+def test_parse_csv_handles_empty_text():
+    assert parse_csv("") == []
+
+
+def test_parse_csv_handles_header_only_text():
+    assert parse_csv("name,role\n") == []
+
+
+def test_parse_csv_skips_blank_lines():
+    # A blank line is a zero-field row, not a record with one empty field.
+    text = "name,role\nAda,Engineer\n\n"
+
+    assert parse_csv(text) == [{
+        "name": "Ada",
+        "role": "Engineer",
+    }]
+
+
+def test_parse_csv_rejects_duplicate_header_names():
+    # A duplicate column name would silently overwrite data in the resulting dict.
+    text = "name,role,name\nAda,Engineer,Lovelace\n"
+
+    with pytest.raises(ValueError, match=r"duplicate column name 'name' at column 2"):
+        parse_csv(text)

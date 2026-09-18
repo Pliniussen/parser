@@ -33,7 +33,8 @@ def parse_csv(text):
             if character == "\r" and index + 1 < len(text) and text[index + 1] == "\n":
                 index += 1
 
-            row.append("".join(field))
+            if row or field:  # a truly blank line (no commas, no text) yields zero fields
+                row.append("".join(field))
             rows.append(row)
             row = []
             field = []
@@ -47,9 +48,23 @@ def parse_csv(text):
         row.append("".join(field))
         rows.append(row)
 
+    if not rows:  # empty file: no header, so no records
+        return []
+
     # First row is the header; every row after that is one record.
+    # Blank lines produce a zero-field row, which we skip like csv.DictReader does.
     headers = rows[0]
-    return [row_to_dict(headers, values) for values in rows[1:]]
+    check_no_duplicate_headers(headers)
+    return [row_to_dict(headers, values) for values in rows[1:] if values]
+
+def check_no_duplicate_headers(headers):
+    # Duplicate column names would silently overwrite each other's values in the
+    # resulting dict, so fail fast instead of losing data quietly.
+    seen = set()
+    for index, header in enumerate(headers):
+        if header in seen:
+            raise ValueError(f"duplicate column name {header!r} at column {index}")
+        seen.add(header)
 
 def row_to_dict(headers, values):
     # zip() pairs headers with values 1-to-1, but real files can have "ragged"
@@ -67,4 +82,3 @@ def row_to_dict(headers, values):
         record[None] = values[len(headers):]
 
     return record
-
