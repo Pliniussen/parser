@@ -9,12 +9,20 @@ def parse_csv(text):
     row = []                # fields collected so far for the current row
     field = []              # characters collected so far for the current field
     inside_quotes = False   # True while between an opening and closing "
+    after_closing_quote = False  # True when only a delimiter or line break may follow
     index = 0
 
-    # Walk char-by-char instead of splitting on "," / "\n" so a comma or newline
+    # Walk char-by-char instead of splitting on "," or "\n" so that a comma or newline
     # inside a quoted field (like "Smith, John") isn't mistaken for a separator.
     while index < len(text):
         character = text[index]
+
+        # Once a quoted field closes, only its delimiter or line break may follow.
+        if after_closing_quote and character not in ",\r\n":
+            raise ValueError(
+                f"unexpected text after closing quote at row {len(rows) + 1}, "
+                f"column {len(row) + 1}"
+            )
 
         if character == '"':
             if inside_quotes and index + 1 < len(text) and text[index + 1] == '"':
@@ -22,12 +30,20 @@ def parse_csv(text):
                 # so add one " and skip past both quote characters.
                 field.append('"')
                 index += 1
+            elif not inside_quotes and field:
+                # A quote may open a field, but cannot appear inside unquoted text.
+                raise ValueError(
+                    f"unexpected quote in unquoted field at row {len(rows) + 1}, "
+                    f"column {len(row) + 1}"
+                )
             else:
                 # A single " either opens a quoted field or closes the one we're in.
                 inside_quotes = not inside_quotes
+                after_closing_quote = not inside_quotes
         elif character == "," and not inside_quotes:
             row.append("".join(field))
             field = []
+            after_closing_quote = False
         elif character in "\r\n" and not inside_quotes:
             # \r\n counts as one line break, so skip the \n if it follows a \r.
             if character == "\r" and index + 1 < len(text) and text[index + 1] == "\n":
@@ -38,10 +54,17 @@ def parse_csv(text):
             rows.append(row)
             row = []
             field = []
+            after_closing_quote = False
         else:
             field.append(character)
 
         index += 1
+
+    # Reaching end-of-file while inside quotes leaves the current field incomplete.
+    if inside_quotes:
+        raise ValueError(
+            f"unterminated quoted field at row {len(rows) + 1}, column {len(row) + 1}"
+        )
 
     # No trailing newline means the loop above never flushed the last row.
     if field or row:
@@ -63,7 +86,7 @@ def check_no_duplicate_headers(headers):
     seen = set()
     for index, header in enumerate(headers):
         if header in seen:
-            raise ValueError(f"duplicate column name {header!r} at column {index}")
+            raise ValueError(f"duplicate column name {header!r} at column {index + 1}")
         seen.add(header)
 
 def row_to_dict(headers, values):
@@ -82,3 +105,5 @@ def row_to_dict(headers, values):
         record[None] = values[len(headers):]
 
     return record
+
+print(parse_csv('name, role\n"",'))

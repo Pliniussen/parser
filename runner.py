@@ -1,3 +1,6 @@
 from parser import parse_csv, read_csv_file
 
-print(parse_csv(read_csv_file("data/employees.ascii.csv")))
+try:
+    print(parse_csv('"name","name"\n"Ada Lovelace","Engineer"\n'))
+except ValueError as error:
+    print(f"Error: {error}")

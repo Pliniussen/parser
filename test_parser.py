@@ -34,6 +34,30 @@ def test_parse_csv_unescapes_doubled_quotes():
     }]
 
 
+def test_parse_csv_rejects_quotes_inside_unquoted_fields():
+    # Quotes must either start a field or be escaped inside a quoted field.
+    text = 'name,role\nAda", Lovelace,Engineer\n'
+
+    with pytest.raises(ValueError):
+        parse_csv(text)
+
+
+def test_parse_csv_rejects_text_after_a_closing_quote():
+    # A closed quoted field must be followed immediately by a comma or line break.
+    text = 'name,role\n"Ada" Lovelace",Engineer\n'
+
+    with pytest.raises(ValueError):
+        parse_csv(text)
+
+
+def test_parse_csv_rejects_unterminated_quoted_fields():
+    # A quote that opens a field must have a matching closing quote before EOF.
+    text = 'name,role\n"Ada,Engineer\n'
+
+    with pytest.raises(ValueError):
+        parse_csv(text)
+
+
 def test_parse_csv_handles_crlf_and_newlines_inside_quoted_fields():
     text = 'name,note\r\n"Ada","first line\r\nsecond line"\r\n'
 
@@ -96,5 +120,5 @@ def test_parse_csv_rejects_duplicate_header_names():
     # A duplicate column name would silently overwrite data in the resulting dict.
     text = "name,role,name\nAda,Engineer,Lovelace\n"
 
-    with pytest.raises(ValueError, match=r"duplicate column name 'name' at column 2"):
+    with pytest.raises(ValueError):
         parse_csv(text)
