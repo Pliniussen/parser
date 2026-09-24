@@ -4,7 +4,7 @@ import json
 import pytest
 from parser import read_csv_file, parse_csv, parse_csv_json
 
-# Cross-checks our parser against Python's stdlib csv module on real sample files.
+# Compare fixture output with Python's reference CSV parser.
 @pytest.mark.parametrize("filepath", [
     "data/sogne.dawa.csv",
     "data/employees.ascii.csv",
@@ -49,7 +49,7 @@ def test_parse_csv_unescapes_doubled_quotes():
 
 
 def test_parse_csv_rejects_quotes_inside_unquoted_fields():
-    # Quotes must either start a field or be escaped inside a quoted field.
+    # A quote must open a field or escape a quote inside one.
     text = 'name,role\nAda", Lovelace,Engineer\n'
 
     with pytest.raises(ValueError):
@@ -72,7 +72,7 @@ def test_parse_csv_rejects_whitespace_after_closing_quote():
 
 
 def test_parse_csv_rejects_unterminated_quoted_fields():
-    # A quote that opens a field must have a matching closing quote before EOF.
+    # An opening quote must be closed before EOF.
     text = 'name,role\n"Ada,Engineer\n'
 
     with pytest.raises(ValueError):
@@ -148,7 +148,7 @@ def test_parse_csv_allows_one_trailing_newline():
 
 
 def test_parse_csv_rejects_duplicate_header_names():
-    # A duplicate column name would silently overwrite data in the resulting dict.
+    # Duplicate names would overwrite values in the result dictionary.
     text = "name,role,name\nAda,Engineer,Lovelace\n"
 
     with pytest.raises(ValueError, match=r"duplicate column name 'name' at column 3"):
@@ -169,8 +169,31 @@ def test_read_csv_file_reports_decoding_errors(tmp_path):
         read_csv_file(filepath)
 
 
+def test_read_csv_file_reports_file_system_errors(tmp_path):
+    filepath = tmp_path / "missing.csv"
+
+    with pytest.raises(ValueError, match=r"could not read .*missing\.csv"):
+        read_csv_file(filepath)
+
+
 def test_read_csv_file_accepts_explicit_encoding(tmp_path):
     filepath = tmp_path / "cp1252.csv"
     filepath.write_bytes("name\nSøren\n".encode("cp1252"))
 
     assert parse_csv(read_csv_file(filepath, encoding="cp1252")) == [{"name": "Søren"}]
+
+
+@pytest.mark.parametrize("encoding", ["cp037", "cp500"])
+def test_read_csv_file_accepts_ebcdic_encodings(tmp_path, encoding):
+    filepath = tmp_path / f"{encoding}.csv"
+    text = 'name,note\n"Ada Lovelace","Engineer, Analytical"\n'
+    filepath.write_bytes(text.encode(encoding))
+
+    assert parse_csv(read_csv_file(filepath, encoding=encoding)) == [{
+        "name": "Ada Lovelace",
+        "note": "Engineer, Analytical",
+    }]
+
+def test_parse_csv_allows_a_trailing_blank_line():
+    text = "name,role\nAda,Engineer\n\n"
+    assert parse_csv(text) == [{"name": "Ada", "role": "Engineer"}]
