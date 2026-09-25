@@ -36,7 +36,6 @@ dependencies into the project-local `.venv`:
 .
 ├── parser.py         # the parser and its public functions
 ├── test_parser.py    # unit tests and reference-parser checks
-├── pytest.ini        # pytest collection configuration
 ├── requirements.txt  # pinned test dependencies
 ├── data/             # sample CSV fixtures used by the tests
 │   ├── employees.ascii.csv
